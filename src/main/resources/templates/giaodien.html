@@ -1,13 +1,368 @@
+<script>
+    // Biến toàn cục
+    let currentUser = null;
+    let userRole = null;
+
+    // Dữ liệu demo users
+    const demoUsers = {
+        'admin': { password: 'admin123', role: 'admin', name: 'Quản trị viên' },
+        'guest': { password: 'guest123', role: 'guest', name: 'Khách vãng lai' },
+        'farmer1': { password: 'farmer123', role: 'farmer', name: 'Nông dân Nguyễn Văn A' }
+    };
+
+    // Hiệu ứng loading
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    // Quản lý modal
+    function openModal(modalType) {
+        if (modalType === 'login') {
+            document.getElementById('loginModal').style.display = 'block';
+        } else if (modalType === 'register') {
+            document.getElementById('registerModal').style.display = 'block';
+        }
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    function switchToRegister() {
+        closeModal('loginModal');
+        openModal('register');
+    }
+
+    function switchToLogin() {
+        closeModal('registerModal');
+        openModal('login');
+    }
+
+    // Đăng nhập
+    function handleLogin(username, password, role) {
+        showLoading();
+
+        setTimeout(() => {
+            hideLoading();
+
+            // Kiểm tra thông tin đăng nhập demo
+            if (demoUsers[username] && demoUsers[username].password === password) {
+                currentUser = username;
+                userRole = role === 'admin' ? 'admin' : demoUsers[username].role;
+
+                // Cập nhật UI
+                updateUserInterface();
+                closeModal('loginModal');
+
+                alert(`Đăng nhập thành công! Chào mừng ${demoUsers[username].name}`);
+            } else {
+                alert('Tên đăng nhập hoặc mật khẩu không chính xác!');
+            }
+        }, 1000);
+    }
+
+    // Đăng nhập với tư cách khách
+    function loginAsGuest() {
+        showLoading();
+
+        setTimeout(() => {
+            hideLoading();
+            currentUser = 'guest';
+            userRole = 'guest';
+
+            updateUserInterface();
+            closeModal('loginModal');
+
+            alert('Đăng nhập với tư cách khách thành công!');
+        }, 500);
+    }
+
+    // Đăng ký
+    function handleRegister(formData) {
+        showLoading();
+
+        setTimeout(() => {
+            hideLoading();
+
+            // Kiểm tra mật khẩu
+            if (formData.password !== formData.confirmPassword) {
+                alert('Mật khẩu xác nhận không khớp!');
+                return;
+            }
+
+            // Kiểm tra username đã tồn tại
+            if (demoUsers[formData.username]) {
+                alert('Tên đăng nhập đã tồn tại!');
+                return;
+            }
+
+            // Thêm user mới (demo)
+            demoUsers[formData.username] = {
+                password: formData.password,
+                role: formData.role,
+                name: formData.fullName,
+                email: formData.email,
+                phone: formData.phone
+            };
+
+            closeModal('registerModal');
+            alert('Đăng ký thành công! Vui lòng đăng nhập.');
+            openModal('login');
+        }, 1000);
+    }
+
+    // Đăng xuất
+    function logout() {
+        if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+            currentUser = null;
+            userRole = null;
+            updateUserInterface();
+            alert('Đăng xuất thành công!');
+        }
+    }
+
+    // Cập nhật giao diện theo người dùng
+    function updateUserInterface() {
+        const authButtons = document.getElementById('authButtons');
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('userName');
+        const userAvatar = document.getElementById('userAvatar');
+        const userRoleEl = document.getElementById('userRole');
+
+        if (currentUser) {
+            // Hiển thị thông tin user
+            authButtons.style.display = 'none';
+            userInfo.style.display = 'flex';
+
+            const userData = demoUsers[currentUser];
+            userName.textContent = userData.name;
+            userAvatar.textContent = userRole === 'admin' ? '👨‍💼' : userRole === 'farmer' ? '👨‍🌾' : '👤';
+
+            // Cập nhật role indicator
+            if (userRole === 'admin') {
+                userRoleEl.textContent = 'Admin';
+                userRoleEl.className = 'admin-indicator';
+            } else if (userRole === 'farmer') {
+                userRoleEl.textContent = 'Nông dân';
+                userRoleEl.className = 'guest-indicator';
+            } else {
+                userRoleEl.textContent = 'Khách';
+                userRoleEl.className = 'guest-indicator';
+            }
+
+            // Cập nhật quyền truy cập buttons
+            updateButtonPermissions();
+        } else {
+            // Hiển thị buttons đăng nhập
+            authButtons.style.display = 'flex';
+            userInfo.style.display = 'none';
+
+            // Vô hiệu hóa tất cả buttons
+            disableAllButtons();
+        }
+    }
+
+    // Cập nhật quyền truy cập buttons
+    function updateButtonPermissions() {
+        const adminOnlyButtons = ['btn-farmer', 'btn-land', 'btn-production', 'btn-quality', 'btn-disease', 'btn-harvest'];
+        const adminOnlyQuickActions = ['qa-add', 'qa-import', 'qa-backup'];
+
+        // Reset tất cả buttons
+        document.querySelectorAll('.action-btn, .quick-action').forEach(btn => {
+            btn.classList.remove('disabled-btn');
+            btn.style.pointerEvents = 'auto';
+        });
+
+        if (userRole === 'guest') {
+            // Khách chỉ được xem một số chức năng
+            adminOnlyButtons.forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.classList.add('disabled-btn');
+                    btn.style.pointerEvents = 'none';
+                }
+            });
+
+            adminOnlyQuickActions.forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.classList.add('disabled-btn');
+                    btn.style.pointerEvents = 'none';
+                }
+            });
+        }
+    }
+
+    // Vô hiệu hóa tất cả buttons khi chưa đăng nhập
+    function disableAllButtons() {
+        document.querySelectorAll('.action-btn, .quick-action').forEach(btn => {
+            btn.classList.add('disabled-btn');
+            btn.style.pointerEvents = 'none';
+        });
+    }
+
+    // Xử lý click các chức năng chính
+    function openFunction(functionName) {
+        if (!currentUser) {
+            alert('Vui lòng đăng nhập để sử dụng chức năng này!');
+            return;
+        }
+
+        // Kiểm tra quyền truy cập
+        const adminOnlyFunctions = ['farmer', 'land', 'production', 'quality', 'disease', 'harvest'];
+        if (userRole === 'guest' && adminOnlyFunctions.includes(functionName)) {
+            alert('Bạn không có quyền truy cập chức năng này! Vui lòng đăng nhập với tài khoản Admin.');
+            return;
+        }
+
+        showLoading();
+
+        setTimeout(() => {
+            hideLoading();
+
+            const messages = {
+                farmer: 'Mở module Quản lý nông dân - Quyền Admin',
+                land: 'Mở module Quản lý đất đai - Quyền Admin',
+                production: 'Mở module Theo dõi sản xuất - Quyền Admin',
+                quality: 'Mở module Kiểm tra chất lượng - Quyền Admin',
+                market: 'Mở module Thông tin thị trường - Tất cả người dùng',
+                weather: 'Mở module Dự báo thời tiết - Tất cả người dùng',
+                disease: 'Mở module Quản lý bệnh hại - Quyền Admin',
+                harvest: 'Mở module Lịch thu hoạch - Quyền Admin',
+                export: 'Mở module Báo cáo xuất khẩu - Tất cả người dùng',
+                training: 'Mở module Đào tạo kỹ thuật - Tất cả người dùng'
+            };
+
+            alert(messages[functionName] || 'Chức năng đang phát triển');
+        }, 800);
+    }
+
+    // Xử lý quick actions
+    function quickAction(action) {
+        if (!currentUser) {
+            alert('Vui lòng đăng nhập để sử dụng chức năng này!');
+            return;
+        }
+
+        // Kiểm tra quyền truy cập
+        const adminOnlyActions = ['add', 'import', 'backup'];
+        if (userRole === 'guest' && adminOnlyActions.includes(action)) {
+            alert('Bạn không có quyền truy cập chức năng này! Vui lòng đăng nhập với tài khoản Admin.');
+            return;
+        }
+
+        const messages = {
+            add: 'Mở form thêm mới dữ liệu - Quyền Admin',
+            search: 'Mở chức năng tìm kiếm - Tất cả người dùng',
+            export: 'Xuất dữ liệu ra file Excel - Tất cả người dùng',
+            import: 'Nhập dữ liệu từ file - Quyền Admin',
+            backup: 'Tạo bản sao lưu dữ liệu - Quyền Admin'
+        };
+
+        showLoading();
+        setTimeout(() => {
+            hideLoading();
+            alert(messages[action] || 'Chức năng đang phát triển');
+        }, 500);
+    }
+
+    // Xử lý form đăng nhập
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        const role = document.getElementById('loginRole').value;
+
+        handleLogin(username, password, role);
+    });
+
+    // Xử lý form đăng ký
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = {
+            fullName: document.getElementById('registerFullName').value,
+            username: document.getElementById('registerUsername').value,
+            email: document.getElementById('registerEmail').value,
+            phone: document.getElementById('registerPhone').value,
+            password: document.getElementById('registerPassword').value,
+            confirmPassword: document.getElementById('registerConfirmPassword').value,
+            role: document.getElementById('registerRole').value
+        };
+
+        handleRegister(formData);
+    });
+
+    // Đóng modal khi click bên ngoài
+    window.onclick = function(event) {
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+
+        if (event.target === loginModal) {
+            closeModal('loginModal');
+        }
+        if (event.target === registerModal) {
+            closeModal('registerModal');
+        }
+    }
+
+    // Cập nhật thời gian thực
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleString('vi-VN');
+        console.log('Thời gian hiện tại:', timeString);
+    }
+
+    // Hiệu ứng hover cho cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px) scale(1.02)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Khởi tạo
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Hệ thống quản lý xoài đã khởi tạo thành công!');
+        updateTime();
+        updateUserInterface(); // Khởi tạo trạng thái chưa đăng nhập
+
+        // Cập nhật thời gian mỗi phút
+        setInterval(updateTime, 60000);
+    });
+
+    // Hiệu ứng cuộn mượt
+    document.querySelectorAll('.quick-action').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!this.classList.contains('disabled-btn')) {
+                this.style.transform = 'translateY(-3px)';
+                setTimeout(() => {
+                    this.style.transform = 'translateY(0)';
+                }, 200);
+            }
+        });
+    });
+
+    // Demo accounts info
+    console.log('Demo accounts:');
+    console.log('Admin: admin/admin123');
+    console.log('Guest: guest/guest123');
+    console.log('Farmer: farmer1/farmer123');
+</script>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://kit.fontawesome.com/fa8c2eff71.js" crossorigin="anonymous"></script>
-    <title>PLAQ - Tìm chỗ nghỉ tiếp theo</title>
+    <title>Quản lý Vùng Trồng Xoài Cát Hòa Lộc - Đồng Tháp</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
-
         * {
             margin: 0;
             padding: 0;
@@ -15,701 +370,903 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background-color: #faf8f6;
-            color: #3a3a3a;
-            font-weight: 400;
-            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f3f0 0%, #e8e6e1 100%);
+            min-height: 100vh;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
         .header {
-            background: linear-gradient(135deg, #d4b896, #c4a782);
-            color: #3a3a3a;
-            padding: 0;
-            min-height: 80vh;
+            background: linear-gradient(135deg, #8fbc8f 0%, #9acd32 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
         }
 
-        .nav-bar {
+        .auth-buttons {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 2;
+        }
+
+        .auth-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 2;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .user-name {
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%) translateY(-100%) rotate(0deg); }
+            50% { transform: translateX(0%) translateY(0%) rotate(180deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f6f3 100%);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(143, 188, 143, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8fbc8f, #9acd32);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #8fbc8f;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-description {
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .content-section {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f6f3 100%);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(143, 188, 143, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 25px;
+            background: linear-gradient(135deg, #8fbc8f, #9acd32);
+            border-radius: 2px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #8fbc8f 0%, #9acd32 100%);
+            color: white;
+            border: none;
+            padding: 18px 25px;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(143, 188, 143, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(143, 188, 143, 0.4);
+        }
+
+        .action-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .action-btn:hover::before {
+            left: 100%;
+        }
+
+        .secondary-btn {
+            background: linear-gradient(135deg, #d4a574 0%, #e6b887 100%);
+            color: white;
+        }
+
+        .secondary-btn:hover {
+            box-shadow: 0 8px 25px rgba(212, 165, 116, 0.4);
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f6f3 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(143, 188, 143, 0.2);
+        }
+
+        .info-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 40px;
-            background: rgba(255, 255, 255, 0.15);
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(143, 188, 143, 0.1);
         }
 
-        .logo {
-            font-size: 24px;
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
             font-weight: 600;
-            color: #3a3a3a;
-            font-family: 'Playfair Display', serif;
-            letter-spacing: -0.5px;
+            color: #2c3e50;
         }
 
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
+        .info-value {
+            color: #8fbc8f;
+            font-weight: 500;
         }
 
-        .currency-lang {
+        .notification {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 1px solid #ffc107;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 15px;
         }
 
-        .currency {
-            background: rgba(255, 255, 255, 0.3);
-            padding: 8px 12px;
-            border-radius: 6px;
-            text-decoration: none;
-            color: #3a3a3a;
-            font-size: 14px;
-            font-weight: 500;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .vietnam-flag {
-            display: inline-block;
-            width: 20px;
-            height: 15px;
-            background: linear-gradient(to bottom, #da020e 50%, #ffff00 50%);
-            border-radius: 2px;
-            margin-right: 5px;
-        }
-
-        .support-link {
-            color: #3a3a3a;
-            text-decoration: none;
-            font-size: 14px;
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            background: #ffc107;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
         }
 
-        .auth-buttons {
+        .footer {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .quick-actions {
             display: flex;
-            gap: 10px;
-        }
-
-        .btn-register, .btn-login {
-            padding: 10px 20px;
-            border: 2px solid #3a3a3a;
-            background: transparent;
-            color: #3a3a3a;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-
-        .btn-login {
-            background: #fff;
-            color: #3a3a3a;
-        }
-
-        .btn-register:hover, .btn-login:hover {
-            background: #f5f3f0;
-            transform: translateY(-1px);
-        }
-
-        .nav-menu {
-            display: flex;
-            justify-content: flex-start;
-            padding: 0 40px;
-            gap: 0;
+            gap: 15px;
+            flex-wrap: wrap;
             margin-top: 20px;
         }
 
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 18px;
-            color: #3a3a3a;
+        .quick-action {
+            background: rgba(143, 188, 143, 0.1);
+            border: 1px solid rgba(143, 188, 143, 0.3);
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: #8fbc8f;
             text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            border-radius: 20px 20px 0 0;
             transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.25);
-            font-weight: 600;
-        }
-
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .hero {
-            padding: 40px 40px 60px;
-            text-align: left;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .hero h1 {
-            font-size: 42px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            line-height: 1.2;
-            color: #3a3a3a;
-            font-family: 'Playfair Display', serif;
-        }
-
-        .hero p {
-            font-size: 18px;
-            margin-bottom: 35px;
-            color: #5a5a5a;
-            font-weight: 400;
-            opacity: 0.9;
-        }
-
-        .search-container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            margin-bottom: 25px;
-            max-width: 1000px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .search-form {
-            display: flex;
-            gap: 12px;
-            align-items: stretch;
-        }
-
-        .search-field {
-            flex: 2;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 16px 15px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            outline: none;
-            background: #fff;
-            color: #333;
-        }
-
-        .search-input:focus {
-            border-color: #0066cc;
-        }
-
-        .search-input::placeholder {
-            color: #666;
-        }
-
-        .date-inputs {
-            display: flex;
-            gap: 10px;
-            flex: 2;
-        }
-
-        .date-input {
-            flex: 1;
-            padding: 16px 15px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            outline: none;
-            background: #fff;
-            color: #333;
-        }
-
-        .date-input:focus {
-            border-color: #0066cc;
-        }
-
-        .guests-input {
-            flex: 1.5;
-            padding: 16px 15px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            outline: none;
-            background: #fff;
-            color: #333;
-        }
-
-        .guests-input:focus {
-            border-color: #0066cc;
-        }
-
-        .search-btn {
-            background: #0066cc;
-            color: white;
-            border: none;
-            padding: 16px 25px;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .search-btn:hover {
-            background: #0052a3;
-        }
-
-        .flight-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 18px;
-            color: #3a3a3a;
-        }
-
-        .flight-checkbox input {
-            margin-right: 8px;
-        }
-
-        .content {
-            background: #f5f5f5;
-            color: #333;
-            min-height: 100vh;
-            padding: 0;
-        }
-
-        .deals-section {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 50px 40px;
-        }
-
-        .deals-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .deals-subtitle {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 30px;
-        }
-
-        .deals-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
-        .deal-card {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
-        }
-
-        .deal-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .deal-content {
-            padding: 30px;
-        }
-
-        .deal-large {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
-
-        .deal-text {
-            flex: 1;
-        }
-
-        .deal-image {
-            flex: 1;
-        }
-
-        .deal-image img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .deal-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .deal-description {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 20px;
-            line-height: 1.4;
-        }
-
-        .deal-btn {
-            background: #0066cc;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .deal-btn:hover {
-            background: #0052a3;
-        }
-
-        .deal-special {
-            background: linear-gradient(135deg, #e8dcc0, #d4b896);
-            color: #3a3a3a;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .deal-special::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/></svg>');
-            background-size: 80px 80px;
-            opacity: 0.3;
-        }
-
-        .deal-special .deal-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .deal-special .deal-title {
-            color: #3a3a3a;
-            font-size: 22px;
-            font-weight: 600;
-        }
-
-        .deal-special .deal-description {
-            color: #5a5a5a;
-        }
-
-        .deal-special .deal-btn {
-            background: #fff;
-            color: #3a3a3a;
-            border: 2px solid #3a3a3a;
-        }
-
-        .deal-special .deal-btn:hover {
-            background: #f5f3f0;
-            transform: translateY(-2px);
-        }
-
-        .badge {
-            background: rgba(255, 255, 255, 0.4);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-bottom: 15px;
-            display: inline-block;
-            color: #3a3a3a;
             font-weight: 500;
         }
 
-        .destination-section {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 50px 40px;
-        }
-
-        .destination-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .destination-subtitle {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 30px;
-        }
-
-        .destination-tabs {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .destination-tab {
-            padding: 10px 20px;
-            border: 1px solid #ddd;
-            background: #fff;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .destination-tab.active {
-            background: #0071c2;
-            color: #fff;
-            border-color: #0071c2;
-        }
-
-        .destination-tab:hover {
-            border-color: #0071c2;
+        .quick-action:hover {
+            background: rgba(143, 188, 143, 0.2);
+            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
-            .nav-bar {
-                padding: 15px 20px;
-            }
-
-            .nav-menu {
-                padding: 0 20px;
-                flex-wrap: wrap;
-            }
-
-            .hero {
-                padding: 40px 20px 60px;
-            }
-
-            .hero h1 {
-                font-size: 36px;
-            }
-
-            .search-form {
-                flex-direction: column;
-                gap: 0;
-            }
-
-            .date-inputs {
-                flex-direction: column;
-            }
-
-            .deals-section {
-                padding: 30px 20px;
-            }
-
-            .deals-grid {
+            .main-content {
                 grid-template-columns: 1fr;
             }
 
-            .deal-large {
-                flex-direction: column;
+            .header h1 {
+                font-size: 2em;
             }
 
-            .destination-section {
-                padding: 30px 20px;
+            .button-grid {
+                grid-template-columns: 1fr;
             }
+        }
 
-            .destination-tabs {
-                flex-wrap: wrap;
-            }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #8fbc8f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f6f3 100%);
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            color: #2c3e50;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #8fbc8f;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(143, 188, 143, 0.3);
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #8fbc8f;
+            box-shadow: 0 0 0 3px rgba(143, 188, 143, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(143, 188, 143, 0.3);
+            border-radius: 8px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #8fbc8f 0%, #9acd32 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(143, 188, 143, 0.3);
+        }
+
+        .switch-mode {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .switch-link {
+            color: #8fbc8f;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .switch-link:hover {
+            text-decoration: underline;
+        }
+
+        .guest-mode {
+            background: rgba(212, 165, 116, 0.1);
+            border: 1px solid rgba(212, 165, 116, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .guest-btn {
+            background: linear-gradient(135deg, #d4a574 0%, #e6b887 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .guest-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 165, 116, 0.3);
+        }
+
+        .admin-indicator {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .guest-indicator {
+            background: linear-gradient(135deg, #d4a574 0%, #e6b887 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .disabled-btn {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .disabled-btn:hover {
+            transform: none;
+            box-shadow: none;
         }
     </style>
 </head>
 <body>
-<header class="header">
-    <nav class="nav-bar">
-        <div class="logo">PLAQ</div>
-        <div class="nav-right">
-            <div class="currency-lang">
-                <a href="#" class="currency">VND</a>
-                <span class="vietnam-flag"></span>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<div class="container">
+    <header class="header">
+        <div class="auth-buttons" id="authButtons">
+            <button class="auth-btn" onclick="openModal('login')">Đăng nhập</button>
+            <button class="auth-btn" onclick="openModal('register')">Đăng ký</button>
+        </div>
+
+        <div class="user-info" id="userInfo">
+            <div class="user-avatar" id="userAvatar">👤</div>
+            <div>
+                <div class="user-name" id="userName">Người dùng</div>
+                <span class="guest-indicator" id="userRole">Khách</span>
             </div>
-            <a href="#" class="support-link">
-                <span><i class="fa-solid fa-question"></i></span>
-                <span>Đăng chỗ nghỉ của Quý vị</span>
-            </a>
-            <div class="auth-buttons">
-                <a href="#" class="btn-register">Đăng ký</a>
-                <a href="#" class="btn-login">Đăng nhập</a>
+            <button class="logout-btn" onclick="logout()">Đăng xuất</button>
+        </div>
+
+        <h1>🥭 Quản lý Vùng Trồng Xoài Cát Hòa Lộc</h1>
+        <p>Tỉnh Đồng Tháp - Hệ thống thông tin quản lý tổng hợp</p>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">1,247</div>
+            <div class="stat-label">Diện tích trồng (ha)</div>
+            <div class="stat-description">Tổng diện tích canh tác xoài</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">356</div>
+            <div class="stat-label">Hộ nông dân</div>
+            <div class="stat-description">Số hộ tham gia sản xuất</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">89%</div>
+            <div class="stat-label">Tỷ lệ đạt chuẩn</div>
+            <div class="stat-description">Chất lượng sản phẩm VietGAP</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">23,500</div>
+            <div class="stat-label">Sản lượng (tấn)</div>
+            <div class="stat-description">Năng suất trung bình/năm</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content-section">
+            <h2 class="section-title">Chức năng quản lý chính</h2>
+
+            <div class="button-grid">
+                <button class="action-btn" onclick="openFunction('farmer')" id="btn-farmer">
+                    👨‍🌾 Quản lý nông dân
+                </button>
+                <button class="action-btn" onclick="openFunction('land')" id="btn-land">
+                    🌱 Quản lý đất đai
+                </button>
+                <button class="action-btn" onclick="openFunction('production')" id="btn-production">
+                    📊 Theo dõi sản xuất
+                </button>
+                <button class="action-btn" onclick="openFunction('quality')" id="btn-quality">
+                    🏆 Kiểm tra chất lượng
+                </button>
+                <button class="action-btn secondary-btn" onclick="openFunction('market')" id="btn-market">
+                    💰 Thông tin thị trường
+                </button>
+                <button class="action-btn secondary-btn" onclick="openFunction('weather')" id="btn-weather">
+                    🌤️ Dự báo thời tiết
+                </button>
+                <button class="action-btn" onclick="openFunction('disease')" id="btn-disease">
+                    🦠 Quản lý bệnh hại
+                </button>
+                <button class="action-btn" onclick="openFunction('harvest')" id="btn-harvest">
+                    🚜 Lịch thu hoạch
+                </button>
+                <button class="action-btn secondary-btn" onclick="openFunction('export')" id="btn-export">
+                    📋 Báo cáo xuất khẩu
+                </button>
+                <button class="action-btn secondary-btn" onclick="openFunction('training')" id="btn-training">
+                    📚 Đào tạo kỹ thuật
+                </button>
+            </div>
+
+            <div class="quick-actions">
+                <a href="#" class="quick-action" onclick="quickAction('add')" id="qa-add">➕ Thêm mới</a>
+                <a href="#" class="quick-action" onclick="quickAction('search')" id="qa-search">🔍 Tìm kiếm</a>
+                <a href="#" class="quick-action" onclick="quickAction('export')" id="qa-export">📤 Xuất dữ liệu</a>
+                <a href="#" class="quick-action" onclick="quickAction('import')" id="qa-import">📥 Nhập dữ liệu</a>
+                <a href="#" class="quick-action" onclick="quickAction('backup')" id="qa-backup">💾 Sao lưu</a>
             </div>
         </div>
-    </nav>
 
-    <nav class="nav-menu">
-        <a href="#" class="nav-item active">
-            <span><i class="fa-solid fa-bed"></i></span>
-            <span>Lưu trú</span>
-        </a>
-        <a href="#" class="nav-item">
-            <span><i class="fa-solid fa-plane-departure"></i></span>
-            <span>Chuyến bay</span>
-        </a>
-        <a href="#" class="nav-item">
-            <span><i class="fa-solid fa-briefcase"></i></span>
-            <span>Chuyến bay + Khách sạn</span>
-        </a>
-        <a href="#" class="nav-item">
-            <span><i class="fa-solid fa-taxi"></i></span>
-            <span>Thuê xe</span>
-        </a>
-        <a href="#" class="nav-item">
-            <span><i class="fa-brands fa-space-awesome"></i></span>
-            <span>Hoạt động</span>
-        </a>
-        <a href="#" class="nav-item">
-            <span><i class="fa-solid fa-car-side"></i></span>
-            <span>Taxi sân bay</span>
-        </a>
-    </nav>
-
-    <div class="hero">
-        <h1>Tìm chỗ nghỉ tiếp theo</h1>
-        <p>Tìm ưu đãi khách sạn, chỗ nghỉ dạng nhà và nhiều hơn nữa...</p>
-
-        <div class="search-container">
-            <form class="search-form">
-                <div class="search-field">
-                    <input type="text" class="search-input" placeholder="Bạn muốn đến đâu?">
+        <div class="sidebar">
+            <div class="notification">
+                <div class="notification-icon">!</div>
+                <div>
+                    <strong>Thông báo mới:</strong><br>
+                    Đợt phun thuốc phòng bệnh sẽ diễn ra vào ngày 20/07/2025
                 </div>
-                <div class="date-inputs">
-                    <input type="text" class="date-input" placeholder="Ngày nhận phòng" value="Ngày nhận phòng">
-                    <input type="text" class="date-input" placeholder="Ngày trả phòng" value="Ngày trả phòng">
-                </div>
-                <select class="guests-input">
-                    <option>2 người lớn · 0 trẻ em · 1 phòng</option>
-                    <option>1 người lớn · 0 trẻ em · 1 phòng</option>
-                    <option>3 người lớn · 0 trẻ em · 1 phòng</option>
-                    <option>2 người lớn · 1 trẻ em · 1 phòng</option>
-                </select>
-                <button type="submit" class="search-btn">Tìm</button>
-            </form>
+            </div>
 
-            <div class="flight-checkbox">
-                <input type="checkbox" id="flight-checkbox">
-                <label for="flight-checkbox">Tôi đang tìm vé máy bay</label>
+            <div class="content-section">
+                <h3 class="section-title">Thông tin hôm nay</h3>
+                <div class="info-panel">
+                    <div class="info-item">
+                        <span class="info-label">Nhiệt độ:</span>
+                        <span class="info-value">28°C - 35°C</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Độ ẩm:</span>
+                        <span class="info-value">75%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Giá xoài:</span>
+                        <span class="info-value">45,000 VNĐ/kg</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Trạng thái:</span>
+                        <span class="info-value">Bình thường</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <h3 class="section-title">Hoạt động gần đây</h3>
+                <div class="info-panel">
+                    <div class="info-item">
+                        <span class="info-label">Cập nhật sản lượng</span>
+                        <span class="info-value">2 giờ trước</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Kiểm tra chất lượng</span>
+                        <span class="info-value">5 giờ trước</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Báo cáo tuần</span>
+                        <span class="info-value">1 ngày trước</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</header>
 
-<main class="content">
-    <section class="deals-section">
-        <h2 class="deals-title">Ưu đãi</h2>
-        <p class="deals-subtitle">Khuyến mãi, giảm giá và ưu đãi đặc biệt dành riêng cho bạn</p>
+    <footer class="footer">
+        <p>&copy; 2025 Hệ thống Quản lý Vùng Trồng Xoài Cát Hòa Lộc - Tỉnh Đồng Tháp</p>
+        <p>Phát triển bởi Trung tâm Công nghệ Thông tin Nông nghiệp</p>
+    </footer>
+</div>
 
-        <div class="deals-grid">
-            <div class="deal-card">
-                <div class="deal-content deal-large">
-                    <div class="deal-text">
-                        <h3 class="deal-title">Kỳ nghỉ ngắn ngày chất lượng</h3>
-                        <p class="deal-description">Tiết kiệm đến 20% với Ưu Đãi Mùa Du Lịch</p>
-                        <button class="deal-btn">Săn ưu đãi</button>
-                    </div>
-                    <div class="deal-image">
-                        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" alt="Luxury Hotel">
-                    </div>
-                </div>
-            </div>
-
-            <div class="deal-card deal-special">
-                <div class="deal-content">
-                    <div class="badge">Nhà nghỉ dưỡng</div>
-                    <h3 class="deal-title">Nghỉ dưỡng trong ngôi nhà mơ ước</h3>
-                    <p class="deal-description">Vô vàn lựa chọn từ nhà gỗ, biệt thự và hơn thế nữa</p>
-                    <button class="deal-btn">Đặt ngay</button>
-                </div>
-            </div>
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('loginModal')">&times;</span>
+        <div class="modal-header">
+            <h2 class="modal-title">Đăng nhập</h2>
+            <p>Truy cập vào hệ thống quản lý</p>
         </div>
-    </section>
-
-    <section class="destination-section">
-        <h2 class="destination-title">Lên kế hoạch dễ dàng và nhanh chóng</h2>
-        <p class="destination-subtitle">Khám phá các điểm đến hàng đầu theo cách bạn thích ở Việt Nam</p>
-
-        <div class="destination-tabs">
-            <div class="destination-tab active">
-                <span>🏙️</span>
-                <span>Thành phố</span>
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label">Tên đăng nhập:</label>
+                <input type="text" class="form-input" id="loginUsername" required>
             </div>
-            <div class="destination-tab">
-                <span>🏖️</span>
-                <span>Bãi biển</span>
+            <div class="form-group">
+                <label class="form-label">Mật khẩu:</label>
+                <input type="password" class="form-input" id="loginPassword" required>
             </div>
-            <div class="destination-tab">
-                <span>🏞️</span>
-                <span>Thiên nhiên</span>
+            <div class="form-group">
+                <label class="form-label">Vai trò:</label>
+                <select class="form-select" id="loginRole">
+                    <option value="guest">Khách vãng lai</option>
+                    <option value="admin">Quản trị viên</option>
+                </select>
             </div>
-            <div class="destination-tab">
-                <span>⏰</span>
-                <span>Thư giãn</span>
-            </div>
-            <div class="destination-tab">
-                <span>🏛️</span>
-                <span>Lãng mạn</span>
-            </div>
-            <div class="destination-tab">
-                <span>🍽️</span>
-                <span>Ẩm thực</span>
-            </div>
+            <button type="submit" class="submit-btn">Đăng nhập</button>
+        </form>
+        <div class="guest-mode">
+            <p>Hoặc truy cập nhanh với tư cách khách</p>
+            <button class="guest-btn" onclick="loginAsGuest()">Vào với tư cách khách</button>
         </div>
-    </section>
-</main>
+        <div class="switch-mode">
+            <p>Chưa có tài khoản? <a class="switch-link" onclick="switchToRegister()">Đăng ký ngay</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- Register Modal -->
+<div id="registerModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('registerModal')">&times;</span>
+        <div class="modal-header">
+            <h2 class="modal-title">Đăng ký</h2>
+            <p>Tạo tài khoản mới</p>
+        </div>
+        <form id="registerForm">
+            <div class="form-group">
+                <label class="form-label">Họ và tên:</label>
+                <input type="text" class="form-input" id="registerFullName" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tên đăng nhập:</label>
+                <input type="text" class="form-input" id="registerUsername" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email:</label>
+                <input type="email" class="form-input" id="registerEmail" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Số điện thoại:</label>
+                <input type="tel" class="form-input" id="registerPhone" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Mật khẩu:</label>
+                <input type="password" class="form-input" id="registerPassword" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Xác nhận mật khẩu:</label>
+                <input type="password" class="form-input" id="registerConfirmPassword" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Vai trò:</label>
+                <select class="form-select" id="registerRole">
+                    <option value="guest">Khách vãng lai</option>
+                    <option value="farmer">Nông dân</option>
+                    <option value="officer">Cán bộ kỹ thuật</option>
+                </select>
+            </div>
+            <button type="submit" class="submit-btn">Đăng ký</button>
+        </form>
+        <div class="switch-mode">
+            <p>Đã có tài khoản? <a class="switch-link" onclick="switchToLogin()">Đăng nhập ngay</a></p>
+        </div>
+    </div>
+</div>
 
 <script>
-    // Thêm chức năng tương tác cơ bản
-    document.querySelector('.search-btn').addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Tính năng tìm kiếm đang được phát triển!');
-    });
+    // Hiệu ứng loading
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
 
-    document.querySelectorAll('.deal-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            alert('Chuyển hướng đến trang ưu đãi!');
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    // Xử lý click các chức năng chính
+    function openFunction(functionName) {
+        showLoading();
+
+        setTimeout(() => {
+            hideLoading();
+
+            const messages = {
+                farmer: 'Mở module Quản lý nông dân',
+                land: 'Mở module Quản lý đất đai',
+                production: 'Mở module Theo dõi sản xuất',
+                quality: 'Mở module Kiểm tra chất lượng',
+                market: 'Mở module Thông tin thị trường',
+                weather: 'Mở module Dự báo thời tiết',
+                disease: 'Mở module Quản lý bệnh hại',
+                harvest: 'Mở module Lịch thu hoạch',
+                export: 'Mở module Báo cáo xuất khẩu',
+                training: 'Mở module Đào tạo kỹ thuật'
+            };
+
+            alert(messages[functionName] || 'Chức năng đang phát triển');
+        }, 800);
+    }
+
+    // Xử lý quick actions
+    function quickAction(action) {
+        const messages = {
+            add: 'Mở form thêm mới dữ liệu',
+            search: 'Mở chức năng tìm kiếm',
+            export: 'Xuất dữ liệu ra file Excel',
+            import: 'Nhập dữ liệu từ file',
+            backup: 'Tạo bản sao lưu dữ liệu'
+        };
+
+        showLoading();
+        setTimeout(() => {
+            hideLoading();
+            alert(messages[action] || 'Chức năng đang phát triển');
+        }, 500);
+    }
+
+    // Cập nhật thời gian thực
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleString('vi-VN');
+
+        // Có thể thêm hiển thị thời gian ở đây
+        console.log('Thời gian hiện tại:', timeString);
+    }
+
+    // Hiệu ứng hover cho cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px) scale(1.02)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
         });
     });
 
-    // Xử lý tabs điểm đến
-    document.querySelectorAll('.destination-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Xóa active class từ tất cả tabs
-            document.querySelectorAll('.destination-tab').forEach(t => t.classList.remove('active'));
-            // Thêm active class cho tab được click
-            this.classList.add('active');
+    // Khởi tạo
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Hệ thống quản lý xoài đã khởi tạo thành công!');
+        updateTime();
+
+        // Cập nhật thời gian mỗi phút
+        setInterval(updateTime, 60000);
+    });
+
+    // Hiệu ứng cuộn mượt
+    document.querySelectorAll('.quick-action').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.style.transform = 'translateY(-3px)';
+            setTimeout(() => {
+                this.style.transform = 'translateY(0)';
+            }, 200);
         });
-    });
-
-    // Thiết lập placeholder cho date inputs
-    const dateInputs = document.querySelectorAll('.date-input');
-    dateInputs[0].addEventListener('focus', function() {
-        this.type = 'date';
-    });
-    dateInputs[1].addEventListener('focus', function() {
-        this.type = 'date';
-    });
-
-    dateInputs[0].addEventListener('blur', function() {
-        if (!this.value) {
-            this.type = 'text';
-            this.value = 'Ngày nhận phòng';
-        }
-    });
-
-    dateInputs[1].addEventListener('blur', function() {
-        if (!this.value) {
-            this.type = 'text';
-            this.value = 'Ngày trả phòng';
-        }
     });
 </script>
 </body>
