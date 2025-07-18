@@ -143,6 +143,11 @@
             cursor: pointer;
             text-decoration: underline;
         }
+        #login-message, #register-message {
+            min-height: 20px;
+            font-size: 0.97rem;
+            margin-bottom: -6px;
+        }
     </style>
 </head>
 <body>
@@ -157,17 +162,19 @@
             <button class="tab-btn" onclick="showTab('register')">Đăng ký</button>
         </div>
         <form id="login-form">
-            <input type="text" placeholder="Tên đăng nhập" required>
-            <input type="password" placeholder="Mật khẩu" required>
+            <input id="login-username" type="text" placeholder="Tên đăng nhập" required>
+            <input id="login-password" type="password" placeholder="Mật khẩu" required>
             <button type="submit" class="submit-btn">Đăng nhập</button>
+            <div id="login-message"></div>
             <div class="switch-link" onclick="showTab('register')">Chưa có tài khoản? Đăng ký</div>
         </form>
         <form id="register-form" style="display: none;">
-            <input type="text" placeholder="Tên đăng nhập" required>
-            <input type="email" placeholder="Email" required>
-            <input type="password" placeholder="Mật khẩu" required>
-            <input type="password" placeholder="Nhập lại mật khẩu" required>
+            <input id="reg-username" type="text" placeholder="Tên đăng nhập" required>
+            <input id="reg-email" type="email" placeholder="Email" required>
+            <input id="reg-password" type="password" placeholder="Mật khẩu" required>
+            <input id="reg-repassword" type="password" placeholder="Nhập lại mật khẩu" required>
             <button type="submit" class="submit-btn">Đăng ký</button>
+            <div id="register-message"></div>
             <div class="switch-link" onclick="showTab('login')">Đã có tài khoản? Đăng nhập</div>
         </form>
     </div>
@@ -180,9 +187,12 @@
         var btns = document.querySelectorAll('.tab-btn');
         btns[0].classList.toggle('active', tab === 'login');
         btns[1].classList.toggle('active', tab === 'register');
+        // Xóa thông báo khi chuyển tab
+        document.getElementById('login-message').innerText = "";
+        document.getElementById('register-message').innerText = "";
     }
 
-    // ========== Tạo 5 trái xoài bay random ========== //
+    // ========== Tạo 5 trái xoài bay random ==========
     function randomInt(a, b) {
         return Math.floor(Math.random() * (b - a + 1)) + a;
     }
@@ -202,10 +212,10 @@
 
         // Chuyển động lặp lại random
         function animate() {
-            const duration = randomInt(16, 30); // giây
+            const duration = randomInt(18, 20); // giây
             const top = randomInt(5, 70) + 'vh';
             mango.style.top = top;
-            mango.style.transition = `left ${duration}s linear, top 2s ease`;
+            mango.style.transition = `left ${duration}s linear, top 3s ease`;
             mango.style.left = '110vw';
             setTimeout(() => {
                 // Reset vị trí và random lại
@@ -218,6 +228,57 @@
         setTimeout(animate, randomInt(0, 5000)); // random delay khi vào trang
     }
     for(let i=0; i<10; ++i) createMango(i);
+
+    // Xử lý Đăng nhập
+    document.getElementById('login-form').onsubmit = async function(e) {
+        e.preventDefault();
+        let username = document.getElementById('login-username').value;
+        let password = document.getElementById('login-password').value;
+        let res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({username, password})
+        });
+        let data = await res.json();
+        document.getElementById('login-message').innerText = data.message;
+        if(data.status === 'success') {
+            document.getElementById('login-message').style.color = 'green';
+            setTimeout(() => {
+                // document.getElementById('login-message').innerText = "";
+                window.location.href = "/giaodien";  // Thêm dòng này để chuyển trang!
+            }, 900); // Chờ 0.9s cho user thấy thông báo
+        } else {
+            document.getElementById('login-message').style.color = 'red';
+        }
+    };
+
+
+    // Xử lý Đăng ký
+    document.getElementById('register-form').onsubmit = async function(e) {
+        e.preventDefault();
+        let username = document.getElementById('reg-username').value;
+        let email = document.getElementById('reg-email').value;
+        let password = document.getElementById('reg-password').value;
+        let repassword = document.getElementById('reg-repassword').value;
+        if(password !== repassword) {
+            document.getElementById('register-message').innerText = 'Mật khẩu nhập lại không khớp';
+            document.getElementById('register-message').style.color = 'red';
+            return;
+        }
+        let res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({username, email, password})
+        });
+        let data = await res.json();
+        document.getElementById('register-message').innerText = data.message;
+        if(data.status === 'success') {
+            document.getElementById('register-message').style.color = 'green';
+            setTimeout(()=>showTab('login'), 1000);
+        } else {
+            document.getElementById('register-message').style.color = 'red';
+        }
+    };
 </script>
 </body>
 </html>
