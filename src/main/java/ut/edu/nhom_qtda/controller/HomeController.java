@@ -8,5 +8,9 @@ public class HomeController {
     public String home() { return "index";}
     @GetMapping("/giaodien")
     public String giaodien() { return "giaodien"; }
+    @GetMapping("/test")
+    public String test() { return "test"; }
+    @GetMapping("/test2")
+    public String test2() { return "test2"; }
 
 }
