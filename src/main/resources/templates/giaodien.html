@@ -12,12 +12,14 @@
             min-height: 100vh;
             margin: 0;
         }
+
         /* Navbar */
         .navbar {
             width: 100%;
             background: linear-gradient(90deg, #fffbe7 20%, #ffe680 60%, #ffce59 100%);
             box-shadow: 0 4px 14px #efd34524;
             display: flex;
+            justify-content: center;
             align-items: center;
             padding: 0 48px;
             height: 64px;
@@ -25,18 +27,14 @@
             top: 0;
             z-index: 10;
         }
-        .navbar .logo {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #fbbf24;
-            margin-right: 30px;
-            user-select: none;
-        }
         .navbar-menu {
             display: flex;
             gap: 30px;
             list-style: none;
-            flex: 1;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
         }
         .navbar-item {
             position: relative;
@@ -51,39 +49,43 @@
         .navbar-item:hover {
             color: #fd8a24;
         }
+
         .navbar-dropdown {
             position: absolute;
             top: 64px;
-            left: 0;
-            min-width: 170px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            min-width: 190px;
             background: #fffbe7;
-            box-shadow: 0 8px 32px #ffd76b20;
-            border-radius: 0 0 16px 16px;
+            box-shadow: 0 10px 32px #ffd76b40;
+            border-radius: 12px;
             opacity: 0;
             visibility: hidden;
-            transform: translateY(-18px);
-            transition: all 0.28s cubic-bezier(.63,-0.12,.37,1.14);
+            transition: all 0.25s ease;
             pointer-events: none;
+            padding: 10px 0;
+            text-align: left;
+            z-index: 99;
+            white-space: nowrap;
         }
         .navbar-item:hover .navbar-dropdown {
             opacity: 1;
             visibility: visible;
-            transform: translateY(0);
+            transform: translateX(-50%) translateY(0);
             pointer-events: auto;
         }
         .navbar-dropdown a {
             display: block;
-            padding: 12px 20px;
+            padding: 10px 20px;
             color: #235b2a;
             text-decoration: none;
             font-weight: 500;
-            border-radius: 12px;
-            background: transparent;
-            transition: background 0.13s;
+            transition: all 0.15s ease;
+            border-radius: 8px;
         }
         .navbar-dropdown a:hover {
-            background: #ffe07f;
-            color: #fd8a24;
+            background-color: #ffefb0;
+            color: #f97316;
         }
 
         /* Poster */
@@ -147,6 +149,7 @@
             background: linear-gradient(90deg, #fcc419 10%, #42c77a 90%);
             color: #383838;
         }
+
         @media (max-width: 900px) {
             .navbar { padding: 0 10px; }
             .poster-content { max-width: 96vw; }
@@ -156,9 +159,9 @@
     </style>
 </head>
 <body>
+
 <!-- Navbar chức năng chính -->
 <nav class="navbar">
-    <div class="logo">🥭</div>
     <ul class="navbar-menu">
         <li class="navbar-item">
             Nông dân
@@ -209,5 +212,6 @@
         </div>
     </div>
 </section>
+
 </body>
 </html>
