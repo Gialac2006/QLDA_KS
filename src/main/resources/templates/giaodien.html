@@ -4,49 +4,62 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quản lý vùng trồng Xoài Cát Hòa Lộc - Đồng Tháp</title>
-    <link href="https://fonts.googleapis.com/css?family=Baloo+2:700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
     <style>
-        body {
-            font-family: 'Baloo 2', Arial, sans-serif;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
             min-height: 100vh;
+            color: white;
         }
 
         .navbar {
             width: 100%;
-            background: linear-gradient(90deg, #fffbe7 20%, #ffe680 60%, #ffce59 100%);
-            box-shadow: 0 4px 14px #efd34524;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0 48px;
-            height: 64px;
-            position: sticky;
+            position: fixed;
             top: 0;
-            z-index: 10;
+            left: 0;
+            z-index: 100;
+            height: 64px;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
         }
 
         .navbar-menu {
             display: flex;
-            gap: 30px;
+            align-items: center;
+            gap: 40px;
             list-style: none;
-            padding: 0;
-            margin: 0;
         }
 
         .navbar-item {
-            position: relative;
-            font-size: 1.09rem;
+            font-size: 1rem;
             font-weight: 600;
-            color: #235b2a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #fff;
             cursor: pointer;
-            padding: 0 8px;
-            line-height: 64px;
-            transition: color 0.19s;
+            transition: color 0.2s ease;
         }
 
         .navbar-item:hover {
-            color: #fd8a24;
+            color: #ffcc33;
+        }
+
+        .navbar-item.active {
+            color: #ffffff;
+        }
+
+        .navbar-item > a {
+            text-decoration: none;
+            color: inherit;
         }
 
         .navbar-dropdown {
@@ -55,8 +68,8 @@
             left: 50%;
             transform: translateX(-50%) translateY(-10px);
             min-width: 190px;
-            background: #fffbe7;
-            box-shadow: 0 10px 32px #ffd76b40;
+            background: rgba(0, 0, 0, 0.9);
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
             border-radius: 12px;
             opacity: 0;
             visibility: hidden;
@@ -76,7 +89,7 @@
         .navbar-dropdown a {
             display: block;
             padding: 10px 20px;
-            color: #235b2a;
+            color: #ffffff;
             text-decoration: none;
             font-weight: 500;
             transition: all 0.15s ease;
@@ -84,14 +97,14 @@
         }
 
         .navbar-dropdown a:hover {
-            background-color: #ffefb0;
-            color: #f97316;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffcc33;
         }
 
         .poster-main {
             position: relative;
             width: 100%;
-            height: calc(100vh - 64px);
+            height: 100vh;
             overflow: hidden;
         }
 
@@ -103,7 +116,7 @@
             height: 100%;
             object-fit: cover;
             z-index: -1;
-            opacity: 0.3;
+            filter: brightness(0.65);
         }
 
         .poster-content {
@@ -112,22 +125,25 @@
             max-width: 900px;
             text-align: center;
             margin: 0 auto;
-            padding-top: 60px;
+            padding-top: 100px;
         }
 
         .poster-title {
-            font-size: 2.8rem;
-            font-weight: bold;
-            color: #fcc419;
-            letter-spacing: 2px;
-            margin-bottom: 28px;
-            text-shadow: 0 3px 20px #fff9be, 0 2px 8px #e1a23b34;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            text-shadow: 0 3px 14px rgba(0, 0, 0, 0.6);
+            line-height: 1.3;
         }
 
         .poster-desc {
-            font-size: 1.4rem;
-            color: #42c77a;
-            margin-bottom: 36px;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #c1f2e5;
+            max-width: 680px;
+            margin: 0 auto 36px auto;
+            line-height: 1.6;
         }
 
         .poster-img {
@@ -155,8 +171,9 @@
             border: none;
             border-radius: 18px;
             padding: 14px 32px;
-            font-weight: bold;
-            font-size: 1.1rem;
+            font-weight: 600;
+            font-size: 1.05rem;
+            font-family: 'Poppins', sans-serif;
             cursor: pointer;
             transition: background 0.22s, color 0.18s;
             box-shadow: 0 5px 18px #d9e66a28;
@@ -168,10 +185,25 @@
         }
 
         @media (max-width: 900px) {
-            .navbar { padding: 0 10px; flex-wrap: wrap; }
-            .poster-content { max-width: 96vw; padding-top: 40px; }
-            .poster-title { font-size: 1.7rem; }
-            .poster-img { max-width: 97vw; }
+            .navbar {
+                flex-direction: column;
+                height: auto;
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .navbar-menu {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .poster-title {
+                font-size: 1.7rem;
+            }
+
+            .poster-img {
+                max-width: 97vw;
+            }
         }
     </style>
 </head>
@@ -180,8 +212,8 @@
 <!-- Navbar -->
 <nav class="navbar">
     <ul class="navbar-menu">
-        <li class="navbar-item">
-            Nông dân
+        <li class="navbar-item active"><a href="/giaodien">Trang chủ</a></li>
+        <li class="navbar-item">Nông dân
             <div class="navbar-dropdown">
                 <a href="#">Danh sách nông dân</a>
                 <a href="#">Thêm mới</a>
@@ -216,7 +248,7 @@
 <!-- Poster -->
 <section class="poster-main">
     <video autoplay muted loop playsinline class="video-bg">
-        <source src="/videos/xoai.mp4" type="video/mp4" />
+        <source src="/videos/nongthon.mp4" type="video/mp4" />
     </video>
 
     <div class="poster-content">
