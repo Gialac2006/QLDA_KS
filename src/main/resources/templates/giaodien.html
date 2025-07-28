@@ -29,7 +29,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: transparent;
+            background: transparent !important;
+            backdrop-filter: none;
+            border: none;
+            transition: top 0.3s ease;
         }
 
         .navbar-menu {
@@ -50,6 +53,7 @@
             height: 64px;
             display: flex;
             align-items: center;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
         }
 
         .navbar-item:hover {
@@ -63,7 +67,7 @@
 
         .navbar-dropdown {
             position: absolute;
-            top: 64px; /* Sát bên dưới navbar */
+            top: 64px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.92);
@@ -124,7 +128,7 @@
             max-width: 1000px;
             text-align: center;
             margin: 0 auto;
-            padding-top: 120px;
+            padding-top: calc(120px + 64px); /* né navbar */
         }
 
         .poster-title {
@@ -249,9 +253,29 @@
         </div>
     </div>
 </section>
-<div>lồn</div>
-<div>lồn</div><div>lồn</div><div>lồn</div><div>lồn</div><div>lồn</div><div>lồn</div>
-<div>lồn</div><div>lồn</div><div>lồn</div><div>lồn</div><div>lồn</div><div>lồn</div>
+
+<!-- Script xử lý ẩn navbar khi cuộn xuống -->
+<script>
+    let lastScrollTop = 0;
+    const navbar = document.querySelector('.navbar');
+
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+        if (scrollTop > lastScrollTop) {
+            navbar.style.top = "-80px"; // Ẩn khi cuộn xuống
+        } else {
+            navbar.style.top = "0"; // Hiện khi cuộn lên
+        }
+
+        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+    });
+</script>
+
+<!-- Nội dung tiếp theo để kiểm tra -->
+<div style="height: 2000px; background-color: #111;">
+    <p style="padding: 20px;">Nội dung tiếp theo để kiểm tra hiệu ứng cuộn.</p>
+</div>
 
 </body>
 </html>
