@@ -35,6 +35,7 @@ public class AuthController {
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(password); // thực tế nên mã hóa!
+        user.setRole("USER");
         userService.saveUser(user);
         res.put("status", "success");
         res.put("message", "Đăng ký thành công");

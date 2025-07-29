@@ -8,11 +8,12 @@ public class HomeController {
     public String home() { return "index";}
     @GetMapping("/giaodien")
     public String giaodien() { return "giaodien"; }
-    @GetMapping("/test")
-    public String test() { return "test"; }
-    @GetMapping("/test2")
     public String test2() { return "test2"; }
     @GetMapping("/honongdan")
     public String honongdan() { return "honongdan"; }
+    @GetMapping("/admin")
+    public String giaodienadmin() { return "giaodienadmin"; }
+    @GetMapping("/aboutus")
+    public String aboutus() { return "aboutus"; }
 
 }

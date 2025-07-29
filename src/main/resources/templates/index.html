@@ -245,7 +245,12 @@
             document.getElementById('login-message').style.color = 'green';
             setTimeout(() => {
                 // document.getElementById('login-message').innerText = "";
-                window.location.href = "/giaodien";  // Thêm dòng này để chuyển trang!
+                if (data.user && data.user.role === 'ADMIN') {
+                    window.location.href = "/admin";
+                } else {
+                    window.location.href = "/giaodien";
+                }
+                // Thêm dòng này để chuyển trang!
             }, 900); // Chờ 0.9s cho user thấy thông báo
         } else {
             document.getElementById('login-message').style.color = 'red';
